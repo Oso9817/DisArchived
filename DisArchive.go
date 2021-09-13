@@ -1,7 +1,6 @@
 package main
 
 import (
-	zaar "alonzo/disarchive/DisArchive/megaUpload"
 	"archive/zip"
 	"errors"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	zaar "projects/megaUpload"
 	//"strconv"
 
 	//"strcov"
@@ -57,7 +57,7 @@ var (
 	saveLocation = "c:\\Users\\Alonzo\\Programming\\DisArchive\\DisArchive\\images\\"
 )
 
-func archive(s *discordgo.Session, lastChatID, channelID string) (error, []string) {
+func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, error) {
 
 	//index the first and last message, make the last message first to keep going 100 back
 	var urlDl []string
@@ -65,7 +65,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) (error, []strin
 	message, err := s.ChannelMessages(channelID, searchRange, lastChatID, "", "")
 	if err != nil {
 
-		return err, urlDl
+		return urlDl, err
 	}
 
 	//c:\Users\Alonzo\Programming\DisArchive\DisArchive\images
@@ -75,7 +75,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) (error, []strin
 	if foo < 0 {
 		err := errors.New("Out of range, last chatID: " + lastChatID)
 		//log.Println()
-		return err, urlDl
+		return urlDl, err
 	}
 	lastChatID = message[foo].ID
 	//look for last message in range, and go another 100 back
@@ -97,7 +97,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) (error, []strin
 						if err != nil {
 							urlDL := append(urlDl, foo.URL)
 							log.Println(urlDL)
-							return err, urlDl
+							return urlDl, err
 
 						}
 					}
@@ -111,7 +111,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) (error, []strin
 	}
 	//separate archive function from downloading and just append to a a list to dl from later
 	archive(s, lastChatID, channelID)
-	return nil, urlDl
+	return urlDl, nil
 }
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, "!start") {
@@ -120,11 +120,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		args := strings.SplitAfter(m.Content, " ")
 		//last chat ID 176595202172125185 images in the 172,000's
 		//searches thru channel that the command was sent in
-		err, _ := archive(s, args[1], args[2])
+		_, err := archive(s, args[1], args[2])
 		if err != nil {
 			log.Println(err)
 		}
 		s.ChannelMessageSend(m.ChannelID, "Done! check directory location")
+		zipName := "photos.zip"
 		/***
 		file, err := os.Open(saveLocation)
 		if err != nil {
@@ -145,10 +146,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		s.ChannelMessageSend(m.ChannelID, "Zip saved!")
 		*/ //
-		err = zaar.StartUpload()
+		url, err := zaar.StartUpload(zipName)
 		if err != nil {
 			log.Println(err)
 		}
+		s.ChannelMessageSend(m.ChannelID, url)
 	}
 }
 func main() {
@@ -187,7 +189,7 @@ func main() {
 }
 
 func bigZip(filename string, files []string) error {
-	log.Println(filename)
+	//log.Println(filename)
 	newZip, err := os.Create(saveLocation + filename)
 
 	if err != nil {

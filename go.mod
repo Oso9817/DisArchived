@@ -1,4 +1,4 @@
-module alonzo/disarchive
+module projects
 
 go 1.17
 
