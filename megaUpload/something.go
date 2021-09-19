@@ -20,13 +20,13 @@ import (
 )
 
 const (
-	CONFIG_FILE = "C:/Users/Alonzo/Programming/DisArchive/DisArchive/megaUpload/config.json"
+	CONFIG_FILE = "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json"
 )
 
 func StartUpload(zipName string) (string, error) {
 	//usr, _ := user.Current()
 	var (
-		config = flag.String("conf", CONFIG_FILE, "Config file path")
+		config = flag.String("wefa", CONFIG_FILE, "Config file path")
 		//ENOENT = errors.New("Object (typically, node or user) not found")
 	)
 
@@ -47,12 +47,12 @@ func StartUpload(zipName string) (string, error) {
 	//cmd := "put"
 
 	arg1 := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images/photos.zip"
-	arg2 := "mega:/bar/"
+	arg2 := "mega:/personal/"
 
 	err = client.Put(arg1, arg2)
 	if err != ErrFileExist && err != nil {
-		log.Println(err)
-		//log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1, arg2, err)
+		//log.Println(err)
+		log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1, arg2, err)
 		//return err
 
 	}
@@ -67,11 +67,12 @@ func StartUpload(zipName string) (string, error) {
 			if err != nil {
 				return "", err
 			}
+			log.Printf("Successfully uploaded file %s to %s", arg1, arg2)
 			return url, err
 		}
 	}
 	//	log.Println(url)
-	log.Printf("Successfully uploaded file %s to %s", arg1, arg2)
+
 	return "", err
 }
 
@@ -269,6 +270,7 @@ func (mc *MegaClient) Put(srcpath, dstres string) error {
 					return err
 				}
 			} else {
+				//crashes here
 				return ErrFileExist
 			}
 		}

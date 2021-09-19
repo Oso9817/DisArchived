@@ -33,7 +33,7 @@ func downloadImage(url, fileName string) error {
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create("c:\\Users\\Alonzo\\Programming\\DisArchive\\DisArchive\\images\\" + fileName)
+	file, err := os.Create("c:\\Users\\Alonzo\\Programming\\DisArchived\\DisArchived\\images\\" + fileName)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func downloadImage(url, fileName string) error {
 
 //put the last element of the 50 slice into a global variable then loop it in the message create event !start
 var (
-	saveLocation = "c:\\Users\\Alonzo\\Programming\\DisArchive\\DisArchive\\images\\"
+	saveLocation = "c:\\Users\\Alonzo\\Programming\\DisArchived\\DisArchived\\images\\"
 )
 
 func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, error) {
@@ -116,17 +116,20 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, "!start") {
 		//var filename []string
+		zipName := "photos.zip"
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
-		args := strings.SplitAfter(m.Content, " ")
+		//!start lastchatID channelID
+		//args := strings.SplitAfter(m.Content, " ")
 		//last chat ID 176595202172125185 images in the 172,000's
 		//searches thru channel that the command was sent in
+		/***
 		_, err := archive(s, args[1], args[2])
 		if err != nil {
 			log.Println(err)
 		}
 		s.ChannelMessageSend(m.ChannelID, "Done! check directory location")
-		zipName := "photos.zip"
-		/***
+
+
 		file, err := os.Open(saveLocation)
 		if err != nil {
 			log.Println(err)
@@ -145,7 +148,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			log.Println(err)
 		}
 		s.ChannelMessageSend(m.ChannelID, "Zip saved!")
-		*/ //
+		***/
 		url, err := zaar.StartUpload(zipName)
 		if err != nil {
 			log.Println(err)
