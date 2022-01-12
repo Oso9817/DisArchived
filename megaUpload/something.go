@@ -47,23 +47,31 @@ func StartUpload(zipName string) error {
 	}
 	//cmd := "put"
 
-	arg1 := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images/photos.zip"
-	arg2 := "mega:/"
+	arg1 := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images/"
+	arg2 := "mega:/personal/"
 
+	files, err := ioutil.ReadDir(arg1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, file := range files {
+		log.Println(arg1 + file.Name())
+		err = client.Put(arg1+file.Name(), arg2)
+		if err != ErrFileExist && err != nil {
+			//log.Println(err)
+			log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1+file.Name(), arg2, err)
+			//return err
+
+		}
+	}
 	//node, err := client.getNode(arg2)
 	//cant create the personal folder then enter the zip file, TODO
 	if err != nil {
 		log.Println(err)
 	}
 
-	err = client.Put(arg1, arg2)
+	//	err = client.Put(arg1, arg2)
 
-	if err != ErrFileExist && err != nil {
-		//log.Println(err)
-		log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1, arg2, err)
-		//return err
-
-	}
 	/*
 		for _, name := range node {
 			if name.GetName() == zipName {
