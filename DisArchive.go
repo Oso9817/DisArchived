@@ -179,7 +179,7 @@ func main() {
 	}
 	err = zaar.StartUpload("photos.zip")
 
-	if err != nil {
+	if err != nil && err != zaar.ErrFileExist {
 		log.Println(err)
 	}
 	log.Println("Upload Complete")
