@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
+	//"path"
 	"strings"
 	"sync"
 	"time"
@@ -48,7 +48,7 @@ func StartUpload(zipName string) error {
 	//cmd := "put"
 
 	arg1 := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images/"
-	arg2 := "mega:/personal/"
+	arg2 := "mega:/"
 
 	files, err := ioutil.ReadDir(arg1)
 	if err != nil {
@@ -56,7 +56,7 @@ func StartUpload(zipName string) error {
 	}
 	for _, file := range files {
 
-		err = client.Put(arg1+file.Name(), arg2)
+		err = client.Put(arg1, file.Name(), arg2)
 		if err != ErrFileExist && err != nil {
 			//log.Println(err)
 			log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1+file.Name(), arg2, err)
@@ -67,24 +67,7 @@ func StartUpload(zipName string) error {
 		}
 
 	}
-	//node, err := client.getNode(arg2)
-	//cant create the personal folder then enter the zip file, TODO
 
-	//	err = client.Put(arg1, arg2)
-
-	/*
-		for _, name := range node {
-			if name.GetName() == zipName {
-				url, err := client.getUrl(name)
-				if err != nil {
-					return err
-				}
-				log.Printf("Successfully uploaded file %s to %s", arg1, arg2)
-				return url, err
-			}
-		}
-		//	log.Println(url)
-	*/
 	return err
 }
 
@@ -114,22 +97,6 @@ func (mc *MegaClient) getNode(dstres string) ([]*mega.Node, error) {
 	root, pathsplit, err := getLookupParams(dstres, mc.mega.FS)
 	if err != nil {
 		return nil, err
-	}
-
-	folderValue := 0
-	nodes, err = mc.mega.FS.GetChildren(root)
-	for _, y := range nodes {
-		if y.GetName() == "personal" {
-			folderValue = 1
-		}
-
-	}
-	if folderValue == 0 {
-		folderNode, err := mc.mega.CreateDir("personal", root)
-		if err != nil {
-			log.Println(err)
-		}
-		log.Println(folderNode)
 	}
 
 	if len(*pathsplit) > 0 {
@@ -199,9 +166,12 @@ func (mc *MegaClient) getUrl(node *mega.Node) (string, error) {
 	return foo, err
 
 }
-func (mc *MegaClient) Put(srcpath, dstres string) error {
-	var nodes []*mega.Node
+func (mc *MegaClient) Put(srcpath, name, dstres string) error {
+	//var nodes []*mega.Node
+
 	var node *mega.Node
+	srcpath = srcpath + name
+
 	info, err := os.Stat(srcpath)
 
 	if err != nil {
@@ -211,114 +181,103 @@ func (mc *MegaClient) Put(srcpath, dstres string) error {
 		return ErrNotFile
 	}
 
-	root, pathsplit, err := getLookupParams(dstres, mc.mega.FS)
+	root, _, err := getLookupParams(dstres, mc.mega.FS)
 	if err != nil {
 		return err
 	}
-
-	if len(*pathsplit) > 0 {
-		nodes, err = mc.mega.FS.PathLookup(root, *pathsplit)
-	}
-
-	if err != nil && err != mega.ENOENT {
-		return err
-	}
-
-	lp := len(*pathsplit)
-	ln := len(nodes)
-
-	var name string
-	switch {
-
-	case lp == ln+1 && ln > 0:
-		node = nodes[ln-1]
-		if node.GetType() == mega.FOLDER && !strings.HasSuffix(dstres, "/") {
-			name = (*pathsplit)[lp-1]
-		} else {
-			return err
-		}
-	case lp == ln:
-		name = path.Base(srcpath)
-		if lp == 0 {
-			node = root
-		} else {
-			node = nodes[ln-1]
-			if node.GetType() == mega.FOLDER {
-				if !strings.HasSuffix(dstres, "/") {
-					return ErrDirExist
-				}
-			} else {
-				if !strings.HasSuffix(dstres, "/") {
-					return ErrNonDir
-				}
-				name = path.Base(dstres)
-				if len(nodes) > 1 {
-					node = nodes[ln-2]
-				} else {
-					node = root
-				}
-			}
-		}
-	case ln == 0 && lp == 1:
-		if !strings.HasSuffix(dstres, "/") {
-			node = root
-			name = path.Base(srcpath)
-		} else {
-			return err
-		}
-	default:
-		return err
-	}
-	children, err := mc.mega.FS.GetChildren(node)
+	foo, err := mc.mega.FS.GetChildren(root)
 	if err != nil {
 		return err
 	}
-	for _, c := range children {
-		if c.GetName() == name {
-			if mc.cfg.SkipSameSize && info.Size() == c.GetSize() {
-				return nil
-			}
-
-			if mc.cfg.Force {
-				err = mc.mega.Delete(c, false)
-				if err != nil {
-					return err
-				}
-				if err != nil {
-					return err
-				}
-			} else {
-				return ErrFileExist
-			}
-		}
-	}
-	/***
-		test := children[0]
-		foo, err := mc.mega.Link(test, true)
+	log.Println(foo)
+	var ch *chan int
+	var wg sync.WaitGroup
+	var bar []string
+	bar = append(bar, "Personal")
+	war := mc.mega.FS.GetRoot()
+	//checks main mega children if folder exists, creates it if not
+	query, err := mc.mega.FS.PathLookup(war, bar)
+	if err == ErrNoFolder {
+		node, err := mc.mega.CreateDir("Personal", root)
 		if err != nil {
 			return err
 		}
-		log.Println(foo)
+		_, err = mc.mega.UploadFile(srcpath, node, name, ch)
+		if err != nil {
+			//crashes here
+			return err
+		}
+		log.Println(srcpath + " -- Succesfully uploaded to destination")
+		return err
 
-		var children []*mega.Node
-		var parentNode *mega.Node
-		for index, c := range parents {
-			if c.GetName() == "personal" {
-				parentNode := parents[index]
-				children, err = mc.mega.FS.GetChildren(parentNode)
-				if err != nil {
+	}
+	if err != nil && err != ErrNoFolder {
+		return err
+	}
+	/*
+			if len(*pathsplit) > 0 {
+				nodes, err = mc.mega.FS.PathLookup(root, *pathsplit)
+			}
+
+			if err != nil && err != mega.ENOENT {
+				return err
+			}
+
+			//	lp := len(*pathsplit)
+			//	ln := len(nodes)
+
+			var name string
+
+				switch {
+
+				case lp == ln+1 && ln > 0:
+					node = nodes[ln-1]
+					if node.GetType() == mega.FOLDER && !strings.HasSuffix(dstres, "/") {
+						name = (*pathsplit)[lp-1]
+					} else {
+						return err
+					}
+				case lp == ln:
+					name = path.Base(srcpath)
+					if lp == 0 {
+						node = root
+					} else {
+						node = nodes[ln-1]
+						if node.GetType() == mega.FOLDER {
+							if !strings.HasSuffix(dstres, "/") {
+								return ErrDirExist
+							}
+						} else {
+							if !strings.HasSuffix(dstres, "/") {
+								return ErrNonDir
+							}
+							name = path.Base(dstres)
+							if len(nodes) > 1 {
+								node = nodes[ln-2]
+							} else {
+								node = root
+							}
+						}
+					}
+				case ln == 0 && lp == 1:
+					if !strings.HasSuffix(dstres, "/") {
+						node = root
+						name = path.Base(srcpath)
+					} else {
+
+						return err
+
+					}
+				default:
 					return err
 				}
-				break
-			}
+
+		children, err := mc.mega.FS.GetChildren(node)
+		if err != nil {
+			return err
 		}
-
-		var targetNode *mega.Node
-		for index, c := range children {
+		for _, c := range children {
 			if c.GetName() == name {
-				targetNode := children[index]
-
-				_ = targetNode
 				if mc.cfg.SkipSameSize && info.Size() == c.GetSize() {
 					return nil
 				}
@@ -332,23 +291,66 @@ func (mc *MegaClient) Put(srcpath, dstres string) error {
 						return err
 					}
 				} else {
-					//TODO
-					//PHOTOS ZIP IS UPLOADING TO ROOT DIRECTORY NOT SUBFFOLDER PERSONAL
-					//crashes here
 					return ErrFileExist
 				}
 			}
 		}
-	***/
-	var ch *chan int
-	var wg sync.WaitGroup
 
+			test := children[0]
+			foo, err := mc.mega.Link(test, true)
+			if err != nil {
+				return err
+			}
+			log.Println(foo)
+
+			var children []*mega.Node
+			var parentNode *mega.Node
+			for index, c := range parents {
+				if c.GetName() == "personal" {
+					parentNode := parents[index]
+					children, err = mc.mega.FS.GetChildren(parentNode)
+					if err != nil {
+						return err
+					}
+					break
+				}
+			}
+
+			var targetNode *mega.Node
+			for index, c := range children {
+				if c.GetName() == name {
+					targetNode := children[index]
+
+					_ = targetNode
+					if mc.cfg.SkipSameSize && info.Size() == c.GetSize() {
+						return nil
+					}
+
+					if mc.cfg.Force {
+						err = mc.mega.Delete(c, false)
+						if err != nil {
+							return err
+						}
+						if err != nil {
+							return err
+						}
+					} else {
+						//TODO
+						//PHOTOS ZIP IS UPLOADING TO ROOT DIRECTORY NOT SUBFFOLDER PERSONAL
+						//crashes here
+						return ErrFileExist
+					}
+				}
+			}
+	*/
+
+	node = query[0]
 	_, err = mc.mega.UploadFile(srcpath, node, name, ch)
 	if err != nil {
 		//crashes here
 		return err
 	}
-	log.Println(name + " -- Succesfully uploaded to destination")
+	log.Println(srcpath + " -- Succesfully uploaded to destination")
 	//succesfully uploads but still gets error access violation? TODO
 	/*
 		foo, err := mc.mega.Link(node, true)
@@ -373,6 +375,7 @@ var (
 	ErrNonDir    = errors.New("a non-directory exists at this path")
 	ErrFileExist = errors.New("file with same name already exists")
 	ErrDirExist  = errors.New("a directory with same name already exists")
+	ErrNoFolder  = mega.ENOENT
 )
 
 func getLookupParams(resource string, fs *mega.MegaFS) (*mega.Node, *[]string, error) {
