@@ -11,3 +11,4 @@
 *.zip
 .vscode/launch.json
 megaUpload/config.json
+megaUpload/config.env

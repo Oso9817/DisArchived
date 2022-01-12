@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+
 	zaar "projects/megaUpload"
 	//"strconv"
 
@@ -27,13 +28,16 @@ func downloadImage(url, fileName string) error {
 	if err != nil {
 		return err
 	}
-
+	//dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Println(err)
+	}
 	if response.StatusCode != 200 {
 		return errors.New("Recieved NON-OK response code on url " + url)
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create("c:\\Users\\Alonzo\\Programming\\DisArchived\\DisArchived\\images\\" + fileName)
+	file, err := os.Create("images\\" + fileName)
 	if err != nil {
 		return err
 	}
@@ -53,9 +57,6 @@ func downloadImage(url, fileName string) error {
 }
 
 //put the last element of the 50 slice into a global variable then loop it in the message create event !start
-var (
-	saveLocation = "c:\\Users\\Alonzo\\Programming\\DisArchived\\DisArchived\\images\\"
-)
 
 func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, error) {
 
@@ -78,6 +79,11 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 		return urlDl, err
 	}
 	lastChatID = message[foo].ID
+
+	//dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Println(err)
+	}
 	//look for last message in range, and go another 100 back
 	for _, content := range message {
 
@@ -89,7 +95,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 					fileName := foo.ID + "." + fileType[1]
 					//create your own folder for images and place the path below
 					//only creates if file does not exist, file use unique IDs names so it should not make duplicates
-					if _, err := os.Stat(saveLocation + fileName); os.IsNotExist(err) {
+					if _, err := os.Stat("images\\" + fileName); os.IsNotExist(err) {
 
 						log.Println("Creating file " + fileName + " " + foo.URL)
 
@@ -115,22 +121,25 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 }
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, "!start") {
-		//var filename []string
+		var filename []string
+		//dirname, err := os.UserHomeDir()
+		//	if err != nil {
+		//		log.Println(err)
+		//	}
 		zipName := "photos.zip"
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
 		//!start lastchatID channelID
-		//args := strings.SplitAfter(m.Content, " ")
+		//	args := strings.SplitAfter(m.Content, " ")
 		//last chat ID 176595202172125185 images in the 172,000's
 		//searches thru channel that the command was sent in
-		/***
-		_, err := archive(s, args[1], args[2])
-		if err != nil {
-			log.Println(err)
-		}
+
+		//_, err = archive(s, args[1], args[2])
+		//if err != nil {
+		//	log.Println(err)
+		//}//
 		s.ChannelMessageSend(m.ChannelID, "Done! check directory location")
 
-
-		file, err := os.Open(saveLocation)
+		file, err := os.Open("images\\")
 		if err != nil {
 			log.Println(err)
 		}
@@ -139,36 +148,43 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		fileList, _ := file.Readdir(0)
 
 		for _, files := range fileList {
-			filename = append(filename, "images/"+files.Name())
+			filename = append(filename, "images\\"+files.Name())
 		}
 		//log.Println(filename)
 
-		err = bigZip("photos.zip", filename)
+		//err = bigZip("photos.zip", filename, dirname)
 		if err != nil {
 			log.Println(err)
 		}
 		s.ChannelMessageSend(m.ChannelID, "Zip saved!")
-		***/
-		url, err := zaar.StartUpload(zipName)
+
+		err = zaar.StartUpload(zipName)
 		if err != nil {
 			log.Println(err)
 		}
-		s.ChannelMessageSend(m.ChannelID, url)
 	}
 }
 func main() {
+
 	err := godotenv.Load("C:/Users/Alonzo/Programming/Go-Rito/isHeBoosted/killerkeys.env")
 	if err != nil {
 		log.Fatal(err)
 	}
-	dkey := os.Getenv("DisKey")
-	dg, err := discordgo.New("Bot " + dkey)
 
-	//log.Println(reflect.TypeOf(dg))
+	dkey := os.Getenv("DisKey")
+
+	dg, err := discordgo.New("Bot " + dkey)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Println(err)
 	}
+	err = zaar.StartUpload("photos.zip")
+
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("Upload Complete")
+	//log.Println(reflect.TypeOf(dg))
+
 	dg.AddHandler(messageCreate)
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 
@@ -187,13 +203,14 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
+
 	defer dg.Close()
 	//messageCreate()
 }
 
-func bigZip(filename string, files []string) error {
+func bigZip(filename string, files []string, dirname string) error {
 	//log.Println(filename)
-	newZip, err := os.Create(saveLocation + filename)
+	newZip, err := os.Create("images\\" + filename)
 
 	if err != nil {
 		return err
@@ -239,5 +256,6 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 		return err
 	}
 	_, err = io.Copy(writer, fileToZip)
+	log.Println(filename + "  --- Added to zip")
 	return err
 }
