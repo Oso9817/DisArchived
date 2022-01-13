@@ -185,17 +185,15 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 	if err != nil {
 		return err
 	}
-	foo, err := mc.mega.FS.GetChildren(root)
-	if err != nil {
-		return err
-	}
-	log.Println(foo)
+
 	var ch *chan int
 	var wg sync.WaitGroup
 	var bar []string
 	bar = append(bar, "Personal")
 	war := mc.mega.FS.GetRoot()
-	//checks main mega children if folder exists, creates it if not
+	//checks main mega children if folder exists,
+
+	//	creates it if not
 	query, err := mc.mega.FS.PathLookup(war, bar)
 	if err == ErrNoFolder {
 		node, err := mc.mega.CreateDir("Personal", root)
@@ -215,69 +213,13 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 		return err
 	}
 	/*
-			if len(*pathsplit) > 0 {
-				nodes, err = mc.mega.FS.PathLookup(root, *pathsplit)
-			}
 
-			if err != nil && err != mega.ENOENT {
-				return err
-			}
-
-			//	lp := len(*pathsplit)
-			//	ln := len(nodes)
-
-			var name string
-
-				switch {
-
-				case lp == ln+1 && ln > 0:
-					node = nodes[ln-1]
-					if node.GetType() == mega.FOLDER && !strings.HasSuffix(dstres, "/") {
-						name = (*pathsplit)[lp-1]
-					} else {
-						return err
-					}
-				case lp == ln:
-					name = path.Base(srcpath)
-					if lp == 0 {
-						node = root
-					} else {
-						node = nodes[ln-1]
-						if node.GetType() == mega.FOLDER {
-							if !strings.HasSuffix(dstres, "/") {
-								return ErrDirExist
-							}
-						} else {
-							if !strings.HasSuffix(dstres, "/") {
-								return ErrNonDir
-							}
-							name = path.Base(dstres)
-							if len(nodes) > 1 {
-								node = nodes[ln-2]
-							} else {
-								node = root
-							}
-						}
-					}
-				case ln == 0 && lp == 1:
-					if !strings.HasSuffix(dstres, "/") {
-						node = root
-						name = path.Base(srcpath)
-					} else {
-
-						return err
-
-					}
-				default:
-					return err
-				}
-
-		children, err := mc.mega.FS.GetChildren(node)
-		if err != nil {
-			return err
-		}
-		for _, c := range children {
+		var targetNode *mega.Node
+		for index, c := range children {
 			if c.GetName() == name {
+				targetNode := children[index]
+
+				_ = targetNode
 				if mc.cfg.SkipSameSize && info.Size() == c.GetSize() {
 					return nil
 				}
@@ -291,76 +233,30 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 						return err
 					}
 				} else {
+					//TODO
+					//PHOTOS ZIP IS UPLOADING TO ROOT DIRECTORY NOT SUBFFOLDER PERSONAL
+					//crashes here
 					return ErrFileExist
 				}
 			}
 		}
-
-			test := children[0]
-			foo, err := mc.mega.Link(test, true)
-			if err != nil {
-				return err
-			}
-			log.Println(foo)
-
-			var children []*mega.Node
-			var parentNode *mega.Node
-			for index, c := range parents {
-				if c.GetName() == "personal" {
-					parentNode := parents[index]
-					children, err = mc.mega.FS.GetChildren(parentNode)
-					if err != nil {
-						return err
-					}
-					break
-				}
-			}
-
-			var targetNode *mega.Node
-			for index, c := range children {
-				if c.GetName() == name {
-					targetNode := children[index]
-
-					_ = targetNode
-					if mc.cfg.SkipSameSize && info.Size() == c.GetSize() {
-						return nil
-					}
-
-					if mc.cfg.Force {
-						err = mc.mega.Delete(c, false)
-						if err != nil {
-							return err
-						}
-						if err != nil {
-							return err
-						}
-					} else {
-						//TODO
-						//PHOTOS ZIP IS UPLOADING TO ROOT DIRECTORY NOT SUBFFOLDER PERSONAL
-						//crashes here
-						return ErrFileExist
-					}
-				}
-			}
 	*/
 
 	node = query[0]
+	children, _ := mc.mega.FS.GetChildren(node)
+	for _, c := range children {
+		if c.GetName() == name {
+			return ErrFileExist
+		}
+	}
+
 	_, err = mc.mega.UploadFile(srcpath, node, name, ch)
 	if err != nil {
 		//crashes here
 		return err
 	}
 	log.Println(srcpath + " -- Succesfully uploaded to destination")
-	//succesfully uploads but still gets error access violation? TODO
-	/*
-		foo, err := mc.mega.Link(node, true)
-		if err != nil {
-			return err
-		}
-		log.Println(foo)
-	*/
 
-	//log.Println("HERE: " + url)
 	wg.Wait()
 	return err
 }
