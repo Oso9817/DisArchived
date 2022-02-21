@@ -153,19 +153,6 @@ func (mc *MegaClient) getNode(dstres string) ([]*mega.Node, error) {
 
 }
 
-func (mc *MegaClient) getUrl(node *mega.Node) (string, error) {
-
-	//children := mc.mega.FS.GetRoot()
-	bar := node.GetType()
-	log.Println(bar)
-	//test := children[0]
-	foo, err := mc.mega.Link(node, true)
-	if err != nil {
-		return "", err
-	}
-	return foo, err
-
-}
 func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 	//var nodes []*mega.Node
 
@@ -212,35 +199,6 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 	if err != nil && err != ErrNoFolder {
 		return err
 	}
-	/*
-
-		var targetNode *mega.Node
-		for index, c := range children {
-			if c.GetName() == name {
-				targetNode := children[index]
-
-				_ = targetNode
-				if mc.cfg.SkipSameSize && info.Size() == c.GetSize() {
-					return nil
-				}
-
-				if mc.cfg.Force {
-					err = mc.mega.Delete(c, false)
-					if err != nil {
-						return err
-					}
-					if err != nil {
-						return err
-					}
-				} else {
-					//TODO
-					//PHOTOS ZIP IS UPLOADING TO ROOT DIRECTORY NOT SUBFFOLDER PERSONAL
-					//crashes here
-					return ErrFileExist
-				}
-			}
-		}
-	*/
 
 	node = query[0]
 	children, _ := mc.mega.FS.GetChildren(node)
