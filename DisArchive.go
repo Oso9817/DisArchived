@@ -70,7 +70,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 	}
 
 	//c:\Users\Alonzo\Programming\DisArchive\DisArchive\images
-	//var messageID []int
+
 	//gets last element in messages unique ID and makes it global
 	foo := len(message) - 1
 	if foo < 0 {
@@ -91,6 +91,7 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 
 			for _, foo := range content.Attachments {
 				if foo.Size >= 256 {
+					//anything less than 256 is probably an emote
 					fileType := strings.SplitAfter(foo.Filename, ".")
 					fileName := foo.ID + "." + fileType[1]
 					//create your own folder for images and place the path below
@@ -121,44 +122,21 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 }
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if strings.HasPrefix(m.Content, "!start") {
-		var filename []string
-		//dirname, err := os.UserHomeDir()
-		//	if err != nil {
-		//		log.Println(err)
-		//	}
-		zipName := "photos.zip"
+
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
 		//!start lastchatID channelID
-		//	args := strings.SplitAfter(m.Content, " ")
-		//last chat ID 176595202172125185 images in the 172,000's
-		//searches thru channel that the command was sent in
+		args := strings.SplitAfter(m.Content, " ")
 
-		//_, err = archive(s, args[1], args[2])
-		//if err != nil {
-		//	log.Println(err)
-		//}//
+		//downloads all files sent in a chat server starting from a specific message ID backwards
+		_, err := archive(s, args[1], args[2])
+		if err != nil {
+			log.Println(err)
+		}
 		s.ChannelMessageSend(m.ChannelID, "Done! check directory location")
 
-		file, err := os.Open("images\\")
-		if err != nil {
-			log.Println(err)
-		}
-		defer file.Close()
-
-		fileList, _ := file.Readdir(0)
-
-		for _, files := range fileList {
-			filename = append(filename, "images\\"+files.Name())
-		}
-		//log.Println(filename)
-
-		//err = bigZip("photos.zip", filename, dirname)
-		if err != nil {
-			log.Println(err)
-		}
 		s.ChannelMessageSend(m.ChannelID, "Zip saved!")
 
-		err = zaar.StartUpload(zipName)
+		err = zaar.StartUpload()
 		if err != nil {
 			log.Println(err)
 		}
@@ -177,12 +155,6 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	err = zaar.StartUpload("photos.zip")
-
-	if err != nil && err != zaar.ErrFileExist {
-		log.Println(err)
-	}
-	log.Println("Upload Complete")
 	//log.Println(reflect.TypeOf(dg))
 
 	dg.AddHandler(messageCreate)
@@ -208,6 +180,7 @@ func main() {
 	//messageCreate()
 }
 
+//optional function to zip files, not used in prod but could be used in future projects
 func bigZip(filename string, files []string, dirname string) error {
 	//log.Println(filename)
 	newZip, err := os.Create("images\\" + filename)

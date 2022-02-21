@@ -24,11 +24,9 @@ const (
 	CONFIG_FILE = "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json"
 )
 
-func StartUpload(zipName string) error {
-	//usr, _ := user.Current()
+func StartUpload() error {
 	var (
-		config = flag.String("fawefaf", CONFIG_FILE, "Config file path")
-		//ENOENT = errors.New("Object (typically, node or user) not found")
+		config = flag.String("wfawef", CONFIG_FILE, "Config file path")
 	)
 
 	conf := new(Config)
@@ -45,22 +43,21 @@ func StartUpload(zipName string) error {
 	if err != nil {
 		return err
 	}
-	//cmd := "put"
 
 	arg1 := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images/"
 	arg2 := "mega:/"
 
+	//reads directory and generates list of contents
 	files, err := ioutil.ReadDir(arg1)
 	if err != nil {
 		log.Fatal(err)
 	}
+	//loops through previously generated lists and uploads them individually, does not crash if file already exists as it is possible it does
 	for _, file := range files {
 
 		err = client.Put(arg1, file.Name(), arg2)
 		if err != ErrFileExist && err != nil {
-			//log.Println(err)
 			log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1+file.Name(), arg2, err)
-			//return err
 
 		} else if err == ErrFileExist {
 			log.Println(file.Name() + " -- Already exists in destination")
