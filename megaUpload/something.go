@@ -20,14 +20,15 @@ import (
 	//"path"
 )
 
+var (
+	config = flag.String("wfawef", CONFIG_FILE, "Config file path")
+)
+
 const (
 	CONFIG_FILE = "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json"
 )
 
 func StartUpload() error {
-	var (
-		config = flag.String("wfawef", CONFIG_FILE, "Config file path")
-	)
 
 	conf := new(Config)
 	err := conf.Parse(*config)

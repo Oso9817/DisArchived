@@ -131,6 +131,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		_, err := archive(s, args[1], args[2])
 		if err != nil {
 			log.Println(err)
+			s.ChannelMessageSend(m.ChannelID, "Error validating those IDs, double check those!")
+			return
+
 		}
 		s.ChannelMessageSend(m.ChannelID, "Done! check directory location")
 
