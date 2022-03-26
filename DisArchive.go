@@ -126,7 +126,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
 		//!start lastchatID channelID
 		args := strings.SplitAfter(m.Content, " ")
-
+		if len(args) != 3 {
+			s.ChannelMessageSend(m.ChannelID, "Error parsing parameters, you seem to be missing some !start xxxx xxxx")
+			return
+		}
 		//downloads all files sent in a chat server starting from a specific message ID backwards
 		_, err := archive(s, args[1], args[2])
 		if err != nil {
@@ -135,9 +138,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 
 		}
-		s.ChannelMessageSend(m.ChannelID, "Done! check directory location")
-
-		s.ChannelMessageSend(m.ChannelID, "Zip saved!")
+		s.ChannelMessageSend(m.ChannelID, "Done! File was succesfully uploaded, check your mega library")
 
 		err = zaar.StartUpload()
 		if err != nil {
@@ -183,6 +184,7 @@ func main() {
 	//messageCreate()
 }
 
+/***
 //optional function to zip files, not used in prod but could be used in future projects
 func bigZip(filename string, files []string, dirname string) error {
 	//log.Println(filename)
@@ -207,6 +209,7 @@ func bigZip(filename string, files []string, dirname string) error {
 	return nil
 }
 
+//also not used due to nobody wanting to open a direct link to a zip file lol
 func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 
 	fileToZip, err := os.Open(filename)
@@ -235,3 +238,4 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	log.Println(filename + "  --- Added to zip")
 	return err
 }
+***/
