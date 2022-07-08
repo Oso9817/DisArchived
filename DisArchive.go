@@ -1,28 +1,24 @@
 package main
 
 import (
-	"archive/zip"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-
+	"path/filepath"
+	duper "projects/dupeCheck"
 	zaar "projects/megaUpload"
-	//"strconv"
-
-	//"strcov"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
-	//"google.golang.org/api/file/v1"
 )
 
-func downloadImage(url, fileName string) error {
+func downloadImage(url, fileName, dir string) error {
 	response, err := http.Get(url)
 
 	if err != nil {
@@ -37,7 +33,7 @@ func downloadImage(url, fileName string) error {
 	}
 	defer response.Body.Close()
 
-	file, err := os.Create("images\\" + fileName)
+	file, err := os.Create(filepath.Join(dir, fileName))
 	if err != nil {
 		return err
 	}
@@ -58,7 +54,7 @@ func downloadImage(url, fileName string) error {
 
 //put the last element of the 50 slice into a global variable then loop it in the message create event !start
 
-func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, error) {
+func archive(s *discordgo.Session, lastChatID, channelID string, dir string) ([]string, error) {
 
 	//index the first and last message, make the last message first to keep going 100 back
 	var urlDl []string
@@ -87,29 +83,26 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 	//look for last message in range, and go another 100 back
 	for _, content := range message {
 
-		if len(content.Attachments) != 0 {
+		for _, foo := range content.Attachments {
+			if foo.Size <= 256 {
+				continue
+			}
+			//anything less than 256 is probably an emote
+			fileType := filepath.Ext(foo.Filename)
+			fileName := foo.ID + fileType
+			//create your own folder for images and place the path below
+			//only creates if file does not exist, file use unique IDs names so it should not make duplicates
+			if _, err := os.Stat(filepath.Join(dir, fileName)); !os.IsNotExist(err) {
+				continue
+			}
 
-			for _, foo := range content.Attachments {
-				if foo.Size >= 256 {
-					//anything less than 256 is probably an emote
-					fileType := strings.SplitAfter(foo.Filename, ".")
-					fileName := foo.ID + "." + fileType[1]
-					//create your own folder for images and place the path below
-					//only creates if file does not exist, file use unique IDs names so it should not make duplicates
-					if _, err := os.Stat("images\\" + fileName); os.IsNotExist(err) {
+			log.Println("Creating file " + fileName + " " + foo.URL)
 
-						log.Println("Creating file " + fileName + " " + foo.URL)
-
-						err := downloadImage(foo.URL, fileName)
-						if err != nil {
-							urlDL := append(urlDl, foo.URL)
-							log.Println(urlDL)
-							return urlDl, err
-
-						}
-					}
-
-				}
+			err := downloadImage(foo.URL, fileName, dir)
+			if err != nil {
+				urlDL := append(urlDl, foo.URL)
+				log.Println(urlDL)
+				return urlDl, err
 
 			}
 
@@ -117,11 +110,45 @@ func archive(s *discordgo.Session, lastChatID, channelID string) ([]string, erro
 
 	}
 	//separate archive function from downloading and just append to a a list to dl from later
-	archive(s, lastChatID, channelID)
+	archive(s, lastChatID, channelID, dir)
 	return urlDl, nil
 }
+func cmdArchive(imageDir, lastChatID, channelID string, s *discordgo.Session, m *discordgo.MessageCreate) error {
+	//downloads all files sent in a chat server starting from a specific message ID backwards
+	_, err := archive(s, lastChatID, channelID, imageDir)
+	if err != nil {
+		return err
+
+	}
+	return nil
+
+}
+func removeDupes(folder string) (int, error) {
+	images, err := duper.Iterate(folder)
+	if err != nil {
+		return 0, err
+	}
+	hashes, err := duper.HashMap(folder, images)
+	if err != nil {
+		return 0, err
+	}
+	QTY := duper.HasDupes(hashes, folder)
+
+	return QTY, err
+
+}
+func upload(folder string) error {
+	err := zaar.StartUpload(folder)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if strings.HasPrefix(m.Content, "!start") {
+	imageDir := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images"
+	if strings.HasPrefix(m.Content, "!archive") {
 
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
 		//!start lastchatID channelID
@@ -130,21 +157,34 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			s.ChannelMessageSend(m.ChannelID, "Error parsing parameters, you seem to be missing some !start xxxx xxxx")
 			return
 		}
-		//downloads all files sent in a chat server starting from a specific message ID backwards
-		_, err := archive(s, args[1], args[2])
+		err := cmdArchive(imageDir, args[1], args[2], s, m)
 		if err != nil {
 			log.Println(err)
-			s.ChannelMessageSend(m.ChannelID, "Error validating those IDs, double check those!")
-			return
-
+			s.ChannelMessageSend(m.ChannelID, "Error archiving, check log")
 		}
-		s.ChannelMessageSend(m.ChannelID, "Done! File was succesfully uploaded, check your mega library")
+		s.ChannelMessageSend(m.ChannelID, "Archive complete! Check directory")
 
-		err = zaar.StartUpload()
-		if err != nil {
-			log.Println(err)
-		}
 	}
+	if strings.HasPrefix(m.Content, "!dupey") {
+		s.ChannelMessageSend(m.ChannelID, "Will remove duplicate photos now")
+		QTY, err := removeDupes(imageDir)
+		if err != nil {
+			log.Println(err)
+			s.ChannelMessageSend(m.ChannelID, "Error removing duplicates, check log")
+		}
+		removedQTY := strconv.Itoa(QTY)
+		s.ChannelMessageSend(m.ChannelID, "QTY of removed dupes: "+removedQTY)
+
+	}
+	if strings.HasPrefix(m.Content, "!upload") {
+		err := upload(imageDir)
+		if err != nil {
+			log.Println(err)
+			s.ChannelMessageSend(m.ChannelID, "Error uploading files, check log")
+		}
+		s.ChannelMessageSend(m.ChannelID, "Upload complete")
+	}
+
 }
 func main() {
 
@@ -155,11 +195,20 @@ func main() {
 
 	dkey := os.Getenv("DisKey")
 
+	//checks if dir exists to store downloaded photos in
+	//creates folder if not found
+	_, err = os.Stat("images")
+	if os.IsNotExist(err) {
+		err = os.Mkdir("images/", 0777)
+		if err != nil {
+			log.Println("Could not find nor create images/ folder")
+		}
+	}
+
 	dg, err := discordgo.New("Bot " + dkey)
 	if err != nil {
 		log.Println(err)
 	}
-	//log.Println(reflect.TypeOf(dg))
 
 	dg.AddHandler(messageCreate)
 	dg.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
@@ -167,14 +216,14 @@ func main() {
 	dg.State.MaxMessageCount = 50
 	discordgo.NewState()
 
-	err1 := dg.Open()
+	err = dg.Open()
 
-	if err1 != nil {
-		fmt.Println(err1)
+	if err != nil {
+		log.Println(err)
 		return
 	}
 
-	fmt.Println("CTRL-C to exit")
+	log.Println("CTRL-C to exit")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)

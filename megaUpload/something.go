@@ -28,7 +28,7 @@ const (
 	CONFIG_FILE = "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json"
 )
 
-func StartUpload() error {
+func StartUpload(folder string) error {
 
 	conf := new(Config)
 	err := conf.Parse(*config)
@@ -45,20 +45,19 @@ func StartUpload() error {
 		return err
 	}
 
-	arg1 := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images/"
-	arg2 := "mega:/"
+	arg2 := "mega:/Dupey"
 
 	//reads directory and generates list of contents
-	files, err := ioutil.ReadDir(arg1)
+	files, err := ioutil.ReadDir(folder)
 	if err != nil {
 		log.Fatal(err)
 	}
 	//loops through previously generated lists and uploads them individually, does not crash if file already exists as it is possible it does
 	for _, file := range files {
 
-		err = client.Put(arg1, file.Name(), arg2)
+		err = client.Put(folder, file.Name(), arg2)
 		if err != ErrFileExist && err != nil {
-			log.Printf("ERROR: Uploading %s to %s failed: (%s)", arg1+file.Name(), arg2, err)
+			log.Printf("ERROR: Uploading %s to %s failed: (%s)", folder+file.Name(), arg2, err)
 
 		} else if err == ErrFileExist {
 			log.Println(file.Name() + " -- Already exists in destination")
@@ -174,14 +173,14 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 	var ch *chan int
 	var wg sync.WaitGroup
 	var bar []string
-	bar = append(bar, "Personal")
+	bar = append(bar, "Dupey")
 	war := mc.mega.FS.GetRoot()
 	//checks main mega children if folder exists,
 
 	//	creates it if not
 	query, err := mc.mega.FS.PathLookup(war, bar)
 	if err == ErrNoFolder {
-		node, err := mc.mega.CreateDir("Personal", root)
+		node, err := mc.mega.CreateDir("Dupey", root)
 		if err != nil {
 			return err
 		}
