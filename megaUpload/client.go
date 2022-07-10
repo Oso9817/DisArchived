@@ -33,7 +33,8 @@ func StartUpload(folder, CONFIG_FILE, rootFolder string) error {
 		return err
 	}
 	//tries to find the node given target folder name
-	megaDirectory := "mega:/" + rootFolder
+	arg1 := folder
+	arg2 := "mega:/playground"
 
 	//reads directory and generates list of contents
 	files, err := ioutil.ReadDir(folder)
@@ -43,9 +44,9 @@ func StartUpload(folder, CONFIG_FILE, rootFolder string) error {
 	//loops through previously generated lists and uploads them individually, does not crash if file already exists as it is possible it does
 	for _, file := range files {
 
-		err = client.Put(folder, file.Name(), megaDirectory)
+		err = client.Put(arg1, file.Name(), arg2)
 		if err != ErrFileExist && err != nil {
-			log.Printf("ERROR: Uploading %s to %s failed: (%s)", folder+file.Name(), megaDirectory, err)
+			log.Printf("ERROR: Uploading %s to %s failed: (%s)", folder+file.Name(), arg2, err)
 
 		} else if err == ErrFileExist {
 			log.Println(file.Name() + " -- Already exists in destination")
@@ -161,14 +162,14 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 	var ch *chan int
 	var wg sync.WaitGroup
 	var bar []string
-	bar = append(bar, dstres)
+	bar = append(bar, "playground")
 	war := mc.mega.FS.GetRoot()
 	//checks main mega children if folder exists,
 
 	//	creates it if not
 	query, err := mc.mega.FS.PathLookup(war, bar)
 	if err == ErrNoFolder {
-		node, err := mc.mega.CreateDir(dstres, root)
+		node, err := mc.mega.CreateDir("playground", root)
 		if err != nil {
 			return err
 		}

@@ -148,7 +148,7 @@ func upload(folder string) error {
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	//change to whatever your directory is
-	imageDir := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images"
+	imageDir := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images2/"
 	if strings.HasPrefix(m.Content, "!archive") {
 
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
@@ -178,6 +178,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 	if strings.HasPrefix(m.Content, "!upload") {
+		s.ChannelMessageSend(m.ChannelID, "Will upload photos now")
 		err := upload(imageDir)
 		if err != nil {
 			log.Println(err)
@@ -198,9 +199,9 @@ func main() {
 
 	//checks if dir exists to store downloaded photos in
 	//creates folder if not found
-	_, err = os.Stat("images")
+	_, err = os.Stat("images2/")
 	if os.IsNotExist(err) {
-		err = os.Mkdir("images/", 0777)
+		err = os.Mkdir("images2/", 0777)
 		if err != nil {
 			log.Println("Could not find nor create images/ folder")
 		}
