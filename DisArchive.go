@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	duper "projects/dupeCheck"
-	zaar "projects/megaUpload"
+	megUpload "projects/megaUpload"
 	"strconv"
 	"strings"
 	"syscall"
@@ -138,7 +138,7 @@ func removeDupes(folder string) (int, error) {
 
 }
 func upload(folder string) error {
-	err := zaar.StartUpload(folder)
+	err := megUpload.StartUpload(folder, "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json", "Dupey")
 	if err != nil {
 		return err
 	}
@@ -147,6 +147,7 @@ func upload(folder string) error {
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	//change to whatever your directory is
 	imageDir := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images"
 	if strings.HasPrefix(m.Content, "!archive") {
 

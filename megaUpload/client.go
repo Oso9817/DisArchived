@@ -1,41 +1,29 @@
 package megaUpload
 
+//THIS FILE IS BASED OFF https://github.com/t3rm1n4l/megacmd WITH SLIGHT TWEAKS
 import (
-	//"errors"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/t3rm1n4l/go-mega"
 	"io/ioutil"
 	"log"
 	"os"
-	//"path"
 	"strings"
 	"sync"
 	"time"
-
-	//"github.com/sqs/goreturns/returns"
-	"github.com/t3rm1n4l/go-mega"
-	//"os/user"
-	//"path"
 )
 
-var (
-	config = flag.String("wfawef", CONFIG_FILE, "Config file path")
-)
-
-const (
-	CONFIG_FILE = "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json"
-)
-
-func StartUpload(folder string) error {
-
+func StartUpload(folder, CONFIG_FILE, rootFolder string) error {
+	//config.json must be created to hold login info for CONFIG_FILE
+	config := flag.String("wfawef", CONFIG_FILE, "Config file path")
 	conf := new(Config)
 	err := conf.Parse(*config)
 	if err != nil {
 		return err
 	}
-
+	//creates new Mega instance and logins with config.json data
 	client, err := NewMegaClient(conf)
 	if err != nil {
 		return err
@@ -44,8 +32,8 @@ func StartUpload(folder string) error {
 	if err != nil {
 		return err
 	}
-
-	arg2 := "mega:/Dupey"
+	//tries to find the node given target folder name
+	megaDirectory := "mega:/" + rootFolder
 
 	//reads directory and generates list of contents
 	files, err := ioutil.ReadDir(folder)
@@ -55,9 +43,9 @@ func StartUpload(folder string) error {
 	//loops through previously generated lists and uploads them individually, does not crash if file already exists as it is possible it does
 	for _, file := range files {
 
-		err = client.Put(folder, file.Name(), arg2)
+		err = client.Put(folder, file.Name(), megaDirectory)
 		if err != ErrFileExist && err != nil {
-			log.Printf("ERROR: Uploading %s to %s failed: (%s)", folder+file.Name(), arg2, err)
+			log.Printf("ERROR: Uploading %s to %s failed: (%s)", folder+file.Name(), megaDirectory, err)
 
 		} else if err == ErrFileExist {
 			log.Println(file.Name() + " -- Already exists in destination")
@@ -173,14 +161,14 @@ func (mc *MegaClient) Put(srcpath, name, dstres string) error {
 	var ch *chan int
 	var wg sync.WaitGroup
 	var bar []string
-	bar = append(bar, "Dupey")
+	bar = append(bar, dstres)
 	war := mc.mega.FS.GetRoot()
 	//checks main mega children if folder exists,
 
 	//	creates it if not
 	query, err := mc.mega.FS.PathLookup(war, bar)
 	if err == ErrNoFolder {
-		node, err := mc.mega.CreateDir("Dupey", root)
+		node, err := mc.mega.CreateDir(dstres, root)
 		if err != nil {
 			return err
 		}

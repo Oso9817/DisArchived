@@ -1,17 +1,12 @@
 package dupeCheck
 
 import (
-
-	//"encoding/base64"
 	"errors"
 	"github.com/corona10/goimagehash"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
-	//"net/http"
-
-	//"image/png"
 	"io/ioutil"
 	"log"
 	"os"
@@ -28,6 +23,7 @@ func HasDupes(m map[string]*goimagehash.ImageHash, imageDir string) int {
 	removedQTY := 0
 	var lastHash *goimagehash.ImageHash
 	//var duplicates []string
+	//ranges through m twice to compare to sets of hashes against eachother, ineffecient
 	for currentKey, currentHash := range m {
 		for k, h := range m {
 			if currentKey == k {
@@ -35,6 +31,7 @@ func HasDupes(m map[string]*goimagehash.ImageHash, imageDir string) int {
 			}
 			if lastKey != "" && lastHash != nil {
 				if k != currentKey && h != currentHash {
+					//compares currentHash vs previous hash H
 					distance, err := currentHash.Distance(h)
 					if err != nil {
 						log.Println(err)
@@ -66,7 +63,8 @@ func ProcessImage(file string, fileName string, hashes map[string]*goimagehash.I
 	}
 	defer file1.Close()
 	img1, _, err := image.Decode(file1)
-	//EOF was a common error, image is malformed and needs to be repaired
+	//EOF was a common error, image is malformed and needs to be repaired this can be done through other programs
+	//doesnt return on broken images to keep the loop going
 	if errors.Is(err, io.EOF) || errors.Is(err, image.ErrFormat) {
 		log.Printf("File: %v has reached EOF, file needs repaired, or is invalid: %v", file1.Name(), err)
 
@@ -107,17 +105,16 @@ func HashMap(imageDir string, images []string) (map[string]*goimagehash.ImageHas
 }
 
 func Iterate(dir string) ([]string, error) {
-	//returns directory in []string to be used to loop hashes
+	//returns directory items in []string to be used to loop hash comparison
 	var titles []string
 	files, err := ioutil.ReadDir(dir)
+
 	if err != nil {
 		return nil, err
 	}
 
 	for _, file := range files {
-
 		titles = append(titles, file.Name())
-
 	}
 
 	return titles, nil
