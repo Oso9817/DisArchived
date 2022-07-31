@@ -138,7 +138,7 @@ func removeDupes(folder string) (int, error) {
 
 }
 func upload(folder string) error {
-	err := megUpload.StartUpload(folder, "C:/Users/Alonzo/Programming/DisArchived/DisArchived/megaUpload/config.json", "Dupey")
+	err := megUpload.StartUpload(folder, "megaUpload/config.json", "Archived")
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func upload(folder string) error {
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	//change to whatever your directory is
-	imageDir := "C:/Users/Alonzo/Programming/DisArchived/DisArchived/images2/"
+	imageDir := "images2/"
 	if strings.HasPrefix(m.Content, "!archive") {
 
 		s.ChannelMessageSend(m.ChannelID, "Hol' up")
@@ -190,7 +190,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 func main() {
 
-	err := godotenv.Load("C:/Users/Alonzo/Programming/Go-Rito/isHeBoosted/killerkeys.env")
+	err := godotenv.Load("killerkeys.env")
 	if err != nil {
 		log.Fatal(err)
 	}
